@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wyrdstones — A Norse Rune Solitaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Sans+Runic&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0a1116;
+    --bg-panel:#131c22;
+    --bg-panel-2:#1a2730;
+    --bone:#e4dcc6;
+    --bone-2:#cfc4a4;
+    --ink:#241d12;
+    --gold:#b3872f;
+    --gold-bright:#d9ad4e;
+    --blood:#8f3a2e;
+    --iron:#5b6570;
+    --ice:#5c96a1;
+    --forest:#3c6b4c;
+    --line:rgba(179,135,47,0.25);
+    /* Slate & Silver tile face — tones lifted straight from the Claude Design
+       "Nordic Mahjong Tiles" sheet (option 2a): a cool blue-slate stone with
+       pale silver engraving. */
+    --tile-1:#39494f;
+    --tile-2:#26343b;
+    --tile-3:#1f2c32;
+    --tile-lip:#0e1619;                        /* hard 3D bottom edge */
+    --tile-edge:rgba(200,214,218,0.20);        /* outer rim */
+    --frame-ink:rgba(200,214,218,0.30);        /* engraved inner frame */
+    --tile-hi:rgba(230,236,242,0.16);          /* top inset highlight */
+    --tile-lo:rgba(0,0,0,0);                   /* bottom inset shade (ivory only) */
+    --silver:#ccd7d9;                          /* engraved glyph silver */
+    /* per-suit glyph tints — kept color-coded so matching pairs read at a
+       glance on a full board (a catalog sheet can be monochrome; a playable
+       board benefits from colour). */
+    --rune-glow:#ccd7d9;
+    --raven-glow:#141519;
+    --wolf-glow:#e8f0f6;
+    --hammer-glow:#e06a4e;
+    --ship-glow:#8fe2ec;
+    --tree-glow:#9bd49b;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(92,150,161,0.09), transparent 55%),
+      radial-gradient(ellipse at 50% 110%, rgba(179,135,47,0.06), transparent 60%),
+      var(--bg-deep);
+    color:var(--bone);
+    font-family:'Inter',system-ui,sans-serif;
+    overflow-x:hidden;
+  }
+  .wrap{
+    min-height:100%;
+    display:flex; flex-direction:column; align-items:center;
+    padding:28px 16px 60px;
+  }
+  header{
+    text-align:center; margin-bottom:6px;
+  }
+  h1{
+    font-family:'Cinzel', serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:0;
+    letter-spacing:0.5px;
+    color:var(--gold-bright);
+    text-shadow:0 2px 12px rgba(201,162,39,0.35);
+  }
+  .subtitle{
+    color:var(--bone-2);
+    opacity:0.75;
+    font-size:13px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+
+  .rune-strip{
+    font-family:'Noto Sans Runic',sans-serif;
+    font-size:15px;
+    letter-spacing:6px;
+    color:var(--gold);
+    opacity:0.35;
+    white-space:nowrap;
+    overflow:hidden;
+    max-width:90vw;
+    text-align:center;
+    margin-top:10px;
+  }
+
+  .panel{
+    display:flex; flex-wrap:wrap; gap:10px;
+    align-items:center; justify-content:center;
+    margin:18px 0 8px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 16px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.25);
+  }
+  .stat{
+    display:flex; flex-direction:column; align-items:center;
+    padding:4px 14px;
+    min-width:74px;
+  }
+  .stat .val{ font-size:19px; font-weight:700; color:var(--gold-bright); font-variant-numeric:tabular-nums;}
+  .stat .lbl{ font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--bone-2); opacity:0.7; margin-top:2px;}
+  .divider{ width:1px; height:32px; background:var(--line);}
+
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.3px;
+    padding:9px 16px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--bg-panel-2);
+    color:var(--bone);
+    cursor:pointer;
+    transition:transform .12s ease, background .15s ease, box-shadow .15s ease;
+  }
+  button:hover{ background:#175a4c; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+  button:active{ transform:translateY(0);}
+  button.primary{
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+    color:#241d06; border:none;
+  }
+  button.primary:hover{ background:linear-gradient(180deg,#f0d269,var(--gold-bright)); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; transform:none;}
+  select{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--bg-panel-2);
+    color:var(--bone);
+    cursor:pointer;
+  }
+
+  .board-outer{
+    position:relative;
+    margin-top:14px;
+    padding:26px;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.03), transparent 60%),
+      var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.25);
+    overflow:auto;
+    max-width:96vw;
+  }
+  .board{
+    position:relative;
+    transform-origin:top left;
+  }
+  /* ---- Slate & Silver tile (from Claude Design sheet 2a, scaled ~0.47 to
+         the 60×78 board tile). ---- */
+  .tile{
+    position:absolute;
+    width:60px; height:78px;
+    border-radius:6px;
+    background:
+      radial-gradient(ellipse at 30% 18%, rgba(255,255,255,0.06), transparent 55%),
+      linear-gradient(165deg, var(--tile-1) 0%, var(--tile-2) 70%, var(--tile-3) 100%);
+    border:1px solid var(--tile-edge);
+    box-shadow:
+      inset 0 1px 0 var(--tile-hi),
+      inset 0 -3px 5px var(--tile-lo),
+      0 3px 0 -1px var(--tile-lip),
+      0 8px 16px rgba(0,0,0,0.55);
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px;
+    line-height:1;
+    cursor:pointer;
+    user-select:none;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .25s ease;
+  }
+  /* single engraved inner frame — the clean silver rule from the design
+     (replaces the older bracket frame so the glyph fills more of the face). */
+  .tile::before{
+    content:"";
+    position:absolute; inset:4px;
+    border-radius:4px;
+    border:1px solid var(--frame-ink);
+    pointer-events:none;
+  }
+  /* faint diagonal sheen, like light catching polished dark stone */
+  .tile::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:6px;
+    background:
+      linear-gradient(115deg, transparent 44%, rgba(255,255,255,0.05) 50%, transparent 56%);
+    pointer-events:none;
+  }
+  .tile .glyph{
+    font-family:'Noto Sans Runic','Inter',sans-serif;
+    font-size:46px;
+    text-shadow:
+      0 0 16px rgba(200,220,225,0.30),
+      0 1px 1px rgba(0,0,0,0.65);
+  }
+  .tile .icon-svg{ width:44px; height:44px; filter:drop-shadow(0 0 6px currentColor) drop-shadow(0 1px 1px rgba(0,0,0,0.55)); }
+  .tile.suit-rune{ color:var(--rune-glow); }
+  .tile.suit-raven{ color:var(--raven-glow); }
+  /* the raven is near-black, so give it a faint silver halo instead of a
+     dark glow, or it would sink into the dark slate */
+  .tile.suit-raven .icon-svg{
+    filter:drop-shadow(0 0 4px rgba(230,236,242,0.5)) drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+  }
+  .tile.suit-wolf{ color:var(--wolf-glow); }
+  .tile.suit-hammer{ color:var(--hammer-glow); }
+  .tile.suit-ship{ color:var(--ship-glow); }
+  .tile.suit-tree{ color:var(--tree-glow); }
+
+  .tile.free:hover{ transform:translateY(-5px); box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 14px 22px rgba(0,0,0,0.5);}
+  .tile.blocked{ cursor:not-allowed; }
+  .tile.selected{
+    outline:3px solid var(--gold-bright);
+    outline-offset:1px;
+    transform:translateY(-9px);
+    box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 18px 26px rgba(0,0,0,0.55), 0 0 20px rgba(230,195,74,0.6);
+    z-index:9999 !important;
+  }
+  .tile.hint{ animation:pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 8px 16px rgba(0,0,0,0.45), 0 0 0 rgba(230,195,74,0.0);}
+    50%{ box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 8px 16px rgba(0,0,0,0.45), 0 0 22px rgba(230,195,74,0.85);}
+  }
+  .tile.shake{ animation:shake 0.35s ease; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0);}
+    25%{ transform:translateX(-5px);}
+    75%{ transform:translateX(5px);}
+  }
+  .tile.removing{
+    opacity:0;
+    transform:translateY(-20px) scale(0.7);
+    pointer-events:none;
+  }
+
+  /* ---- Bone & Rune level shell (Claude Design sheet 2b): ivory stone with
+         engraved slate/rust glyphs on a slate-blue base edge, laid out on a
+         pale birch table. Only the shell swaps — faces stay consistent. ---- */
+  .board-outer.theme-bone{
+    --tile-1:#faf6ea; --tile-2:#efe8d6; --tile-3:#e3dac2;
+    --tile-lip:#3f5a63;
+    --tile-edge:rgba(120,100,60,0.35);
+    --frame-ink:rgba(51,71,78,0.28);
+    --tile-hi:rgba(255,255,255,0.85);
+    --tile-lo:rgba(120,100,60,0.20);
+    --rune-glow:#33474e;
+    --raven-glow:#16171b;
+    --wolf-glow:#5b6570;
+    --hammer-glow:#9a3b2e;
+    --ship-glow:#2e6d7e;
+    --tree-glow:#3d6b4f;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.45), transparent 60%),
+      #dfe3e1;
+    border-color:rgba(63,90,99,0.35);
+    box-shadow:0 20px 50px rgba(0,0,0,0.35), inset 0 0 60px rgba(151,164,158,0.35);
+  }
+  /* engraved (embossed) glyphs instead of the dark theme's silver glow */
+  .theme-bone .tile .glyph{ text-shadow:0 1px 0 rgba(255,255,255,0.65); }
+  .theme-bone .tile .icon-svg,
+  .theme-bone .tile.suit-raven .icon-svg{
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,0.6));
+  }
+
+  .banner{
+    margin-top:14px;
+    background:rgba(178,58,46,0.18);
+    border:1px solid rgba(178,58,46,0.5);
+    color:#f0c9c4;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13px;
+    display:none;
+    align-items:center;
+    gap:10px;
+  }
+  .banner.show{ display:flex; }
+  .banner button{ padding:5px 12px; font-size:12px; }
+
+  .howto{
+    max-width:640px;
+    margin-top:16px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--bone-2);
+    display:none;
+  }
+  .howto.show{ display:block; }
+  .howto b{ color:var(--gold-bright); }
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(6,18,15,0.82);
+    display:none; align-items:center; justify-content:center;
+    z-index:10000;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    background:var(--bg-panel);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:36px 44px;
+    text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,0.6);
+  }
+  .modal h2{
+    font-family:'Cinzel',serif;
+    color:var(--gold-bright);
+    margin:0 0 10px;
+    font-size:28px;
+  }
+  .modal p{ color:var(--bone-2); margin:4px 0 20px; }
+  .modal .modal-actions{ display:flex; gap:10px; justify-content:center; }
+
+  footer{
+    margin-top:22px;
+    font-size:11.5px;
+    color:var(--bone-2);
+    opacity:0.55;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Wyrdstones</h1>
+    <div class="subtitle">A Norse Rune Solitaire</div>
+  </header>
+
+  <div class="rune-strip" aria-hidden="true">ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ · ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ</div>
+
+  <div class="panel">
+    <div class="stat"><div class="val" id="timeVal">00:00</div><div class="lbl">Time</div></div>
+    <div class="divider"></div>
+    <div class="stat"><div class="val" id="pairsVal">0/0</div><div class="lbl">Pairs Left</div></div>
+    <div class="divider"></div>
+    <div class="stat"><div class="val" id="movesVal">0</div><div class="lbl">Matches</div></div>
+    <div class="divider"></div>
+    <div class="stat"><div class="val" id="levelVal">—</div><div class="lbl">Realm</div></div>
+    <div class="divider"></div>
+    <select id="levelSel" title="Choose realm"></select>
+    <button id="hintBtn">🔮 Seer's Sight</button>
+    <button id="shuffleBtn">🌀 Reshuffle Stones</button>
+    <button id="newGameBtn" class="primary">⚔️ New Game</button>
+    <button id="howtoBtn">📜 How to Play</button>
+    <button id="soundBtn" title="Toggle sound">🔊</button>
+  </div>
+
+  <div class="banner" id="stuckBanner">
+    No matching stones are free right now. <button id="bannerShuffle">Reshuffle Stones</button>
+  </div>
+
+  <div class="howto" id="howto">
+    <b>Goal:</b> clear the whole board by removing every stone, two at a time.<br>
+    <b>How to select:</b> click a stone to select it, then click a matching stone (same rune or emblem) to remove both.<br>
+    <b>Which stones can be picked:</b> only <b>free</b> stones — nothing sitting on top of them, and open on the <b>left or right</b> side (not boxed in on both sides).<br>
+    <b>The tiles:</b> 24 stones are carved with the Elder Futhark runes; the rest bear the old emblems — raven, wolf, Mjölnir, longship, and Yggdrasil.<br>
+    <b>The realms:</b> four boards of rising difficulty — Midgard, Vanaheim, Niflheim, Asgard. Slate stones for some realms, carved bone for others. Clear one to travel to the next, or jump between them with the realm picker.<br>
+    <b>Stuck?</b> Call on <b>Seer's Sight</b> to reveal a valid pair, or <b>Reshuffle</b> to rearrange the remaining stones without changing the layout.
+  </div>
+
+  <div class="board-outer">
+    <div class="board" id="board"></div>
+  </div>
+
+  <footer>Tip: covered stones are the ones you can see stacked above others — clear those first to free up what's underneath.</footer>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <div class="modal">
+    <h2>The Board Is Cleared</h2>
+    <p id="winSummary"></p>
+    <div class="modal-actions">
+      <button class="primary" id="nextLevelBtn">Next Realm ⟶</button>
+      <button id="playAgainBtn">Replay Realm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // ---------- Tile type definitions ----------
+  // 24 Elder Futhark runes (real Unicode Runic-block characters, fehu -> othala)
+  const RUNE_CHARS = ['ᚠ','ᚢ','ᚦ','ᚨ','ᚱ','ᚲ','ᚷ','ᚹ','ᚺ','ᚾ','ᛁ','ᛃ','ᛇ','ᛈ','ᛉ','ᛊ','ᛏ','ᛒ','ᛖ','ᛗ','ᛚ','ᛜ','ᛞ','ᛟ'];
+
+  // 5 hand-built Norse emblem icons, drawn from simple shapes so they read
+  // clearly at small size (in the bold, geometric spirit of Viking Age
+  // carvings rather than fussy detail).
+  const ICONS = {
+    raven:
+      '<svg class="icon-svg" viewBox="0 0 100 100"><g fill="currentColor">'+
+      '<ellipse cx="44" cy="56" rx="20" ry="16"/>'+
+      '<circle cx="66" cy="39" r="12"/>'+
+      '<polygon points="78,36 92,31 80,42"/>'+
+      '<path d="M28,50 Q44,30 62,47 Q47,55 32,57 Z"/>'+
+      '<polygon points="27,61 9,53 15,65"/>'+
+      '<polygon points="25,67 7,65 17,77"/>'+
+      '<polygon points="29,71 13,77 23,83"/>'+
+      '<rect x="37" y="69" width="4" height="13" rx="2"/>'+
+      '<rect x="49" y="70" width="4" height="13" rx="2"/>'+
+      '</g></svg>',
+    wolf:
+      '<svg class="icon-svg" viewBox="0 0 100 100"><g fill="currentColor">'+
+      '<polygon points="50,14 32,34 27,56 38,82 50,92 62,82 73,56 68,34"/>'+
+      '<polygon points="32,34 15,8 37,24"/>'+
+      '<polygon points="68,34 85,8 63,24"/>'+
+      '</g></svg>',
+    hammer:
+      '<svg class="icon-svg" viewBox="0 0 100 100"><g fill="currentColor">'+
+      '<polygon points="16,18 84,18 92,46 8,46"/>'+
+      '<rect x="41" y="46" width="18" height="34" rx="2"/>'+
+      '<rect x="41" y="55" width="18" height="4"/>'+
+      '<rect x="41" y="64" width="18" height="4"/>'+
+      '<circle cx="50" cy="88" r="8" fill="none" stroke="currentColor" stroke-width="4"/>'+
+      '</g></svg>',
+    ship:
+      '<svg class="icon-svg" viewBox="0 0 100 100"><g fill="currentColor">'+
+      '<path d="M8,66 C4,58 6,50 14,46 C10,54 11,61 13,66 Z"/>'+
+      '<path d="M12,66 C12,78 30,86 50,86 C70,86 88,78 88,66 L78,66 C73,74 61,77 50,77 C39,77 27,74 22,66 Z"/>'+
+      '<rect x="48" y="16" width="4" height="52"/>'+
+      '<polygon points="30,22 70,22 61,50 39,50"/>'+
+      '</g></svg>',
+    tree:
+      '<svg class="icon-svg" viewBox="0 0 100 100"><g fill="currentColor">'+
+      '<circle cx="50" cy="30" r="20"/>'+
+      '<circle cx="30" cy="39" r="14"/>'+
+      '<circle cx="70" cy="39" r="14"/>'+
+      '<rect x="46" y="44" width="8" height="30"/>'+
+      '<path d="M50,74 L30,95 M50,74 L50,98 M50,74 L70,95" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>'+
+      '</g></svg>',
+  };
+
+  const TYPES = [];
+  RUNE_CHARS.forEach((ch,i)=>{
+    TYPES.push({ id:'rune'+i, cls:'suit-rune', char:ch });
+  });
+  Object.keys(ICONS).forEach(key=>{
+    TYPES.push({ id:'icon-'+key, cls:'suit-'+key, svg:ICONS[key] });
+  });
+  // TYPES.length === 29 (24 runes + 5 emblems)
+
+  // ---------- Sound engine ----------
+  // All sounds are synthesized live with the browser's built-in Web Audio
+  // API — no audio files needed, so the game stays a single portable file.
+  // Browsers only allow audio after the user interacts with the page, so
+  // the audio context is created lazily on the first click.
+  let audioCtx = null;
+  let soundOn = true;
+
+  function ctx(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  // A short burst of filtered noise — the basis of stone clacks and thuds.
+  function noiseBurst(ac, when, dur, freq, q, gainVal){
+    const bufferSize = Math.max(1, Math.floor(ac.sampleRate * dur));
+    const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    const filter = ac.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = freq;
+    filter.Q.value = q;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(gainVal, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    src.connect(filter); filter.connect(g); g.connect(ac.destination);
+    src.start(when); src.stop(when + dur);
+  }
+
+  // A simple pitched tone with a fast decay — used for chimes and horns.
+  function tone(ac, when, dur, freq, type, gainVal){
+    const osc = ac.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, when);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(gainVal, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(when); osc.stop(when + dur);
+  }
+
+  const sfx = {
+    select(){ // light stone tap
+      const ac = ctx(); if(!ac || !soundOn) return;
+      noiseBurst(ac, ac.currentTime, 0.06, 2200, 1.2, 0.25);
+    },
+    match(){ // two stones clacking together, with a low resonant knock
+      const ac = ctx(); if(!ac || !soundOn) return;
+      const t0 = ac.currentTime;
+      noiseBurst(ac, t0, 0.05, 2600, 1.0, 0.5);
+      noiseBurst(ac, t0, 0.10, 900, 2.5, 0.4);
+      tone(ac, t0, 0.18, 220, 'triangle', 0.22);
+    },
+    invalid(){ // dull muffled thud
+      const ac = ctx(); if(!ac || !soundOn) return;
+      const t0 = ac.currentTime;
+      noiseBurst(ac, t0, 0.12, 240, 1.5, 0.4);
+      tone(ac, t0, 0.12, 90, 'sine', 0.3);
+    },
+    shuffle(){ // stones tumbling: several quick offset clacks
+      const ac = ctx(); if(!ac || !soundOn) return;
+      const t0 = ac.currentTime;
+      for(let i=0;i<6;i++){
+        const jitter = i*0.05 + Math.random()*0.02;
+        noiseBurst(ac, t0 + jitter, 0.05, 1400 + Math.random()*1400, 1.2, 0.22);
+      }
+    },
+    win(){ // a small horn call: rising open fifths, like a lur horn
+      const ac = ctx(); if(!ac || !soundOn) return;
+      const t0 = ac.currentTime;
+      const notes = [196.00, 293.66, 392.00, 587.33]; // G3 D4 G4 D5
+      notes.forEach((f,i)=>{
+        tone(ac, t0 + i*0.16, 0.5, f, 'sawtooth', 0.12);
+        tone(ac, t0 + i*0.16, 0.5, f*1.005, 'sawtooth', 0.10); // slight detune = brassy
+      });
+    },
+  };
+
+  // ---------- Levels (positions in half-tile grid units) ----------
+  // Four realms of rising size, alternating the two shells from the Claude
+  // Design tile sheets: Slate & Silver (2a) and Bone & Rune (2b). Every
+  // layout's tile count is divisible by 4, which the solvable-deal builder
+  // relies on to hand out complete four-of-a-kind sets.
+  const LEVELS = [
+    { name:'Midgard', theme:'slate', layers:[      // 56 stones — the gentle start
+      { z:0, offsetX:0,  offsetY:0, rows:4, cols:10 },
+      { z:1, offsetX:4,  offsetY:2, rows:2, cols:6  },
+      { z:2, offsetX:6,  offsetY:3, rows:1, cols:4  },
+    ]},
+    { name:'Vanaheim', theme:'bone', layers:[      // 84 stones — ivory wilds
+      { z:0, offsetX:0,  offsetY:0, rows:5, cols:10 },
+      { z:1, offsetX:2,  offsetY:2, rows:3, cols:8  },
+      { z:2, offsetX:6,  offsetY:3, rows:2, cols:4  },
+      { z:3, offsetX:9,  offsetY:4, rows:1, cols:2  },
+    ]},
+    { name:'Niflheim', theme:'slate', layers:[     // 116 stones — the deep mist
+      { z:0, offsetX:0,  offsetY:0, rows:6, cols:12 },
+      { z:1, offsetX:5,  offsetY:3, rows:4, cols:8  },
+      { z:2, offsetX:10, offsetY:6, rows:2, cols:4  },
+      { z:3, offsetX:13, offsetY:7, rows:2, cols:2  },
+    ]},
+    { name:'Asgard', theme:'bone', layers:[        // 128 stones — the high citadel
+      { z:0, offsetX:0,  offsetY:0, rows:6, cols:12 },
+      { z:1, offsetX:2,  offsetY:2, rows:4, cols:10 },
+      { z:2, offsetX:6,  offsetY:4, rows:2, cols:6  },
+      { z:3, offsetX:9,  offsetY:5, rows:1, cols:4  },
+    ]},
+  ];
+
+  let levelIdx = 0;
+  try{
+    const saved = parseInt(localStorage.getItem('wyrd-level'), 10);
+    if(!isNaN(saved) && saved >= 0 && saved < LEVELS.length) levelIdx = saved;
+  }catch(e){}
+
+  function buildPositions(layerDefs){
+    const positions = [];
+    layerDefs.forEach(layer=>{
+      for(let r=0;r<layer.rows;r++){
+        for(let c=0;c<layer.cols;c++){
+          positions.push({
+            x: layer.offsetX + c*2,
+            y: layer.offsetY + r*2,
+            z: layer.z
+          });
+        }
+      }
+    });
+    return positions;
+  }
+
+  const UNIT_X = 30, UNIT_Y = 39;
+  const BOARD_PAD = 10;
+
+  // ---------- Freedom rules ----------
+  function isCovered(tile, list){
+    for(const o of list){
+      if(o===tile || o.removed) continue;
+      if(o.z > tile.z &&
+         o.x < tile.x+2 && o.x+2 > tile.x &&
+         o.y < tile.y+2 && o.y+2 > tile.y){
+        return true;
+      }
+    }
+    return false;
+  }
+  function isFreeTile(tile, list){
+    if(isCovered(tile, list)) return false;
+    let leftBlocked=false, rightBlocked=false;
+    for(const o of list){
+      if(o===tile || o.removed) continue;
+      if(o.z===tile.z && o.y===tile.y){
+        if(o.x === tile.x-2) leftBlocked=true;
+        if(o.x === tile.x+2) rightBlocked=true;
+      }
+    }
+    return !(leftBlocked && rightBlocked);
+  }
+
+  function shuffleArr(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  // ---------- Game state ----------
+  let tiles = [];
+  let selected = null;
+  let matches = 0;
+  let totalPairs = 0;
+  let timerHandle = null;
+  let seconds = 0;
+  let gameOver = false;
+
+  const boardEl = document.getElementById('board');
+  const timeVal = document.getElementById('timeVal');
+  const pairsVal = document.getElementById('pairsVal');
+  const movesVal = document.getElementById('movesVal');
+  const stuckBanner = document.getElementById('stuckBanner');
+  const winOverlay = document.getElementById('winOverlay');
+  const winSummary = document.getElementById('winSummary');
+  const levelVal = document.getElementById('levelVal');
+  const levelSel = document.getElementById('levelSel');
+  const nextLevelBtn = document.getElementById('nextLevelBtn');
+  const boardOuter = document.querySelector('.board-outer');
+
+  // Builds a deal that is GUARANTEED solvable: instead of assigning random
+  // types and hoping the result can be cleared, we simulate a legal clearing
+  // sequence first (always removing two currently-free positions at a time)
+  // and hand out matching tile types as we go. The exact sequence we used to
+  // build the board is itself proof that the board can be fully cleared.
+  function generateBoard(layerDefs){
+    const positions = buildPositions(layerDefs);
+    const count = positions.length;
+    const typesNeeded = count/4;
+    // Each type needs exactly 2 entries here: one per pair-removal step,
+    // since each step assigns one type to a matched pair of physical tiles
+    // (2 steps x 2 tiles = 4 physical copies of that type on the board).
+    // Smaller realms use fewer than the full 29 types, so draw from a
+    // shuffled order — otherwise short boards would deal only runes and
+    // never an emblem.
+    const order = shuffleArr(TYPES.slice());
+    const typeQueue = [];
+    for(let i=0;i<typesNeeded;i++){
+      const t = order[i % order.length];
+      typeQueue.push(t,t);
+    }
+    shuffleArr(typeQueue);
+
+    for(let constructAttempt=0; constructAttempt<25; constructAttempt++){
+      const tiles = positions.map((p,i)=>({
+        x:p.x, y:p.y, z:p.z, id:i, removed:false, type:null
+      }));
+      shuffleArr(typeQueue);
+      let typeIdx = 0;
+      let stuck = false;
+
+      while(tiles.some(t=>!t.removed)){
+        const free = tiles.filter(t=>!t.removed && isFreeTile(t, tiles));
+        if(free.length < 2){ stuck = true; break; }
+        shuffleArr(free);
+        const a = free[0], b = free[1];
+        const type = typeQueue[typeIdx++];
+        a.type = type; b.type = type;
+        a.removed = true; b.removed = true;
+      }
+
+      if(!stuck){
+        tiles.forEach(t=>{ t.removed = false; });
+        return tiles;
+      }
+    }
+    // Astronomically unlikely fallback: just return the last attempt as-is
+    // rather than leave the player with no board at all.
+    return positions.map((p,i)=>({
+      x:p.x, y:p.y, z:p.z, id:i, removed:false, type: order[i % order.length]
+    }));
+  }
+
+  function render(){
+    boardEl.innerHTML = '';
+    let maxX=0, maxY=0;
+    tiles.forEach(t=>{
+      maxX = Math.max(maxX, t.x+2);
+      maxY = Math.max(maxY, t.y+2);
+    });
+    boardEl.style.width = (maxX*UNIT_X + BOARD_PAD*2) + 'px';
+    boardEl.style.height = (maxY*UNIT_Y + BOARD_PAD*2) + 'px';
+
+    tiles.forEach(t=>{
+      if(t.removed) return;
+      const div = document.createElement('div');
+      div.className = 'tile ' + t.type.cls;
+      // Slate & Silver faces carry a single engraved frame drawn in CSS
+      // (.tile::before), so the glyph/icon is the only child and can fill
+      // more of the stone — matching the Claude Design sheet.
+      if(t.type.svg){
+        div.innerHTML = t.type.svg;
+      } else {
+        const span = document.createElement('span');
+        span.className = 'glyph';
+        span.textContent = t.type.char;
+        div.appendChild(span);
+      }
+      div.dataset.id = t.id;
+      const left = BOARD_PAD + t.x*UNIT_X - t.z*3;
+      const top = BOARD_PAD + t.y*UNIT_Y - t.z*6;
+      div.style.left = left+'px';
+      div.style.top = top+'px';
+      div.style.zIndex = 100 + t.z*10;
+      div.addEventListener('click', ()=>onTileClick(t, div));
+      t.el = div;
+      updateFreeClass(t, div);
+      boardEl.appendChild(div);
+    });
+  }
+
+  function updateFreeClass(t, div){
+    div = div || t.el;
+    if(!div) return;
+    const free = isFreeTile(t, tiles);
+    div.classList.toggle('free', free);
+    div.classList.toggle('blocked', !free);
+  }
+
+  function refreshAllFreeStates(){
+    tiles.forEach(t=>{ if(!t.removed) updateFreeClass(t); });
+  }
+
+  function onTileClick(t, div){
+    if(gameOver || t.removed) return;
+    if(!isFreeTile(t, tiles)){
+      div.classList.remove('shake'); void div.offsetWidth; div.classList.add('shake');
+      sfx.invalid();
+      return;
+    }
+    if(selected === null){
+      selected = t;
+      div.classList.add('selected');
+      sfx.select();
+      return;
+    }
+    if(selected.id === t.id){
+      div.classList.remove('selected');
+      selected = null;
+      sfx.select();
+      return;
+    }
+    if(selected.type.id === t.type.id){
+      // match!
+      sfx.match();
+      const prevEl = selected.el;
+      prevEl.classList.remove('selected');
+      prevEl.classList.add('removing');
+      div.classList.add('removing');
+      selected.removed = true;
+      t.removed = true;
+      selected = null;
+      matches++;
+      movesVal.textContent = matches;
+      pairsVal.textContent = (totalPairs - matches) + '/' + totalPairs;
+      setTimeout(()=>{
+        refreshAllFreeStates();
+        checkGameState();
+      }, 260);
+    } else {
+      selected.el.classList.remove('selected');
+      selected = t;
+      div.classList.add('selected');
+    }
+  }
+
+  function checkGameState(){
+    const remaining = tiles.filter(t=>!t.removed);
+    if(remaining.length===0){
+      endGame(true);
+      return;
+    }
+    // check if any move exists
+    const free = remaining.filter(t=>isFreeTile(t, tiles));
+    const byType = {};
+    free.forEach(t=>{ (byType[t.type.id]=byType[t.type.id]||[]).push(t); });
+    const hasMove = Object.values(byType).some(g=>g.length>=2);
+    stuckBanner.classList.toggle('show', !hasMove);
+  }
+
+  function endGame(won){
+    gameOver = true;
+    stopTimer();
+    if(won){
+      winSummary.textContent = LEVELS[levelIdx].name + ' is cleared — all ' + totalPairs + ' pairs in ' + formatTime(seconds) + '.';
+      nextLevelBtn.style.display = (levelIdx < LEVELS.length-1) ? '' : 'none';
+      winOverlay.classList.add('show');
+      sfx.win();
+    }
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const sec = (s%60).toString().padStart(2,'0');
+    return m+':'+sec;
+  }
+
+  function startTimer(){
+    stopTimer();
+    seconds = 0;
+    timeVal.textContent = formatTime(seconds);
+    timerHandle = setInterval(()=>{
+      seconds++;
+      timeVal.textContent = formatTime(seconds);
+    }, 1000);
+  }
+  function stopTimer(){
+    if(timerHandle){ clearInterval(timerHandle); timerHandle=null; }
+  }
+
+  function newGame(){
+    const level = LEVELS[levelIdx];
+    gameOver = false;
+    selected = null;
+    matches = 0;
+    winOverlay.classList.remove('show');
+    stuckBanner.classList.remove('show');
+    boardOuter.classList.toggle('theme-bone', level.theme === 'bone');
+    levelVal.textContent = level.name;
+    levelSel.value = String(levelIdx);
+    try{ localStorage.setItem('wyrd-level', String(levelIdx)); }catch(e){}
+    tiles = generateBoard(level.layers);
+    totalPairs = tiles.length/2;
+    movesVal.textContent = '0';
+    pairsVal.textContent = totalPairs + '/' + totalPairs;
+    render();
+    startTimer();
+    checkGameState();
+    fitBoard();
+  }
+
+  function doHint(){
+    if(gameOver) return;
+    const remaining = tiles.filter(t=>!t.removed);
+    const free = remaining.filter(t=>isFreeTile(t, tiles));
+    const byType = {};
+    free.forEach(t=>{ (byType[t.type.id]=byType[t.type.id]||[]).push(t); });
+    const group = Object.values(byType).find(g=>g.length>=2);
+    if(!group){
+      stuckBanner.classList.add('show');
+      return;
+    }
+    const [a,b] = group;
+    [a,b].forEach(t=>{
+      t.el.classList.add('hint');
+      setTimeout(()=> t.el && t.el.classList.remove('hint'), 1400);
+    });
+  }
+
+  function doShuffle(){
+    if(gameOver) return;
+    const remaining = tiles.filter(t=>!t.removed);
+    if(remaining.length===0) return;
+    let attempts = 0;
+    let success = false;
+    while(attempts < 40 && !success){
+      const typesPool = shuffleArr(remaining.map(t=>t.type));
+      remaining.forEach((t,i)=> t.type = typesPool[i]);
+      const free = remaining.filter(t=>isFreeTile(t, tiles));
+      const byType = {};
+      free.forEach(t=>{ (byType[t.type.id]=byType[t.type.id]||[]).push(t); });
+      success = Object.values(byType).some(g=>g.length>=2);
+      attempts++;
+    }
+    if(selected){ selected.el && selected.el.classList.remove('selected'); selected=null; }
+    sfx.shuffle();
+    render();
+    checkGameState();
+  }
+
+  function fitBoard(){
+    const outer = document.querySelector('.board-outer');
+    const avail = Math.min(window.innerWidth*0.94, 1100);
+    const boardW = parseFloat(boardEl.style.width);
+    const scale = Math.min(1, (avail-52)/boardW);
+    boardEl.style.transform = 'scale(' + scale + ')';
+    boardEl.parentElement.style.height = (boardEl.offsetHeight*scale) + 'px';
+  }
+
+  window.addEventListener('resize', fitBoard);
+
+  document.getElementById('hintBtn').addEventListener('click', doHint);
+  document.getElementById('soundBtn').addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+    if(soundOn) sfx.select(); // little confirmation tap
+  });
+  document.getElementById('shuffleBtn').addEventListener('click', doShuffle);
+  document.getElementById('bannerShuffle').addEventListener('click', doShuffle);
+  document.getElementById('newGameBtn').addEventListener('click', newGame);
+  document.getElementById('playAgainBtn').addEventListener('click', newGame);
+  nextLevelBtn.addEventListener('click', ()=>{
+    if(levelIdx < LEVELS.length-1) levelIdx++;
+    newGame();
+  });
+  LEVELS.forEach((lv,i)=>{
+    const o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = (i+1) + ' · ' + lv.name;
+    levelSel.appendChild(o);
+  });
+  levelSel.addEventListener('change', ()=>{
+    levelIdx = parseInt(levelSel.value, 10) || 0;
+    newGame();
+  });
+
+  newGame();
+})();
+</script>
+</body>
+</html>

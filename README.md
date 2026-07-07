@@ -1,25 +1,55 @@
-# CODING AGENTS: READ THIS FIRST
+# Wyrdstones — A Norse Rune Solitaire
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+A mahjong-solitaire game with a Norse theme: clear stacked rune stones from the
+board by matching free pairs. Built as a **single self-contained HTML file** —
+no build step, no dependencies, no assets. Open `index.html` in any browser and
+play.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+## Play
 
-## What you should do — IMPORTANT
+Open `index.html`, or serve the repo root with any static file server
+(the game also works when hosted on GitHub Pages).
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+- Click a **free** stone (nothing on top, open on the left or right side),
+  then click its match — same rune or emblem — to remove the pair.
+- Clear all stones to win the realm.
+- **Seer's Sight** reveals a valid pair; **Reshuffle Stones** re-deals the
+  remaining stones in place.
 
-**Read `project/Nordic Mahjong Tiles.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## The realms
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+Four levels of rising difficulty, alternating the two tile shells from the
+Claude Design tile sheets (see `design/`):
 
-## About the design files
+| # | Realm    | Stones | Shell          |
+|---|----------|--------|----------------|
+| 1 | Midgard  | 56     | Slate & Silver |
+| 2 | Vanaheim | 84     | Bone & Rune    |
+| 3 | Niflheim | 116    | Slate & Silver |
+| 4 | Asgard   | 128    | Bone & Rune    |
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+The current realm is remembered in `localStorage`.
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+## The tiles
 
-## Bundle contents
+- **24 Elder Futhark runes** (real Unicode Runic-block characters), 4 copies
+  each style-permitting per deal
+- **5 Norse emblems** drawn as inline SVG: raven, wolf, Mjölnir, longship,
+  and Yggdrasil
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Nordic Mahjong tile designs` project files (HTML prototypes, assets, components)
+Every deal is **guaranteed solvable**: the board builder simulates a legal
+clearing sequence in reverse, assigning matching types as it goes.
+
+Sound is synthesized live with the Web Audio API (stone clacks, a lur-horn
+win call) — no audio files.
+
+## Design provenance
+
+The tile look comes from a Claude Design project, **"Nordic Mahjong tile
+designs"**, preserved in full under `design/`:
+
+- `design/project/Nordic Mahjong Tiles.dc.html` — the tile sheets
+  (Slate & Silver = sheet 2a, Bone & Rune = sheet 2b)
+- `design/chats/chat1.md` — the design conversation and decisions
+- `design/project/uploads/` — commissioned raven/wolf tile art (not yet
+  embedded in the game)
