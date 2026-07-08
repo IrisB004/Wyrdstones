@@ -21,13 +21,23 @@
     --ice:#5c96a1;
     --forest:#3c6b4c;
     --line:rgba(179,135,47,0.25);
-    /* slate-grey rune-stone tile face + pale engraving tones */
-    --tile-1:#434b53;
-    --tile-2:#282e35;
-    --tile-edge:rgba(220,228,235,0.22);
-    --frame-ink:rgba(226,232,238,0.42);
-    --rune-glow:#f2e8c4;
-    --raven-glow:#15161a;
+    /* Slate & Silver tile face — tones lifted straight from the Claude Design
+       "Nordic Mahjong Tiles" sheet (option 2a): a cool blue-slate stone with
+       pale silver engraving. */
+    --tile-1:#39494f;
+    --tile-2:#26343b;
+    --tile-3:#1f2c32;
+    --tile-lip:#0e1619;                        /* hard 3D bottom edge */
+    --tile-edge:rgba(200,214,218,0.20);        /* outer rim */
+    --frame-ink:rgba(200,214,218,0.30);        /* engraved inner frame */
+    --tile-hi:rgba(230,236,242,0.16);          /* top inset highlight */
+    --tile-lo:rgba(0,0,0,0);                   /* bottom inset shade (ivory only) */
+    --silver:#ccd7d9;                          /* engraved glyph silver */
+    /* per-suit glyph tints — kept color-coded so matching pairs read at a
+       glance on a full board (a catalog sheet can be monochrome; a playable
+       board benefits from colour). */
+    --rune-glow:#ccd7d9;
+    --raven-glow:#141519;
     --wolf-glow:#e8f0f6;
     --hammer-glow:#e06a4e;
     --ship-glow:#8fe2ec;
@@ -83,10 +93,70 @@
     margin-top:10px;
   }
 
+  .tabs{ display:flex; gap:8px; margin-top:16px; }
+  .tab{ padding:8px 18px; }
+  .tab.active{
+    background:var(--bg-panel-2);
+    border-color:var(--gold-bright);
+    color:var(--gold-bright);
+    box-shadow:0 0 12px rgba(217,173,78,0.15);
+  }
+  #sizeBtn.active{ border-color:var(--gold-bright); color:var(--gold-bright); }
+
+  .subbar{
+    display:flex; flex-wrap:wrap; gap:12px;
+    align-items:center; justify-content:center;
+    margin-top:10px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 16px;
+  }
+  .realm-title{
+    font-family:'Cinzel',serif; font-weight:700; font-size:16px;
+    color:var(--gold-bright); letter-spacing:1.5px;
+    min-width:120px; text-align:center;
+  }
+  .rnav{ padding:4px 11px; font-size:12px; }
+  .dots{ display:flex; gap:8px; }
+  .dot{
+    width:28px; height:28px; border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--bg-panel-2); color:var(--bone-2);
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0;
+  }
+  .dot.done{ border-color:var(--gold); color:var(--gold-bright); }
+  .dot.current{ outline:2px solid var(--gold-bright); outline-offset:1px; }
+  .dot.locked{ opacity:0.35; cursor:not-allowed; }
+  .subinfo{ font-size:12.5px; color:var(--bone-2); }
+
+  .calendar{
+    display:none; margin-top:10px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 16px;
+  }
+  .calendar.show{ display:block; }
+  .cal-title{
+    text-align:center; font-family:'Cinzel',serif; font-size:13px;
+    color:var(--gold-bright); letter-spacing:1.5px; margin-bottom:8px;
+  }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,34px); gap:4px; }
+  .cal-cell{
+    height:30px; display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; color:var(--bone-2); border-radius:6px;
+  }
+  .cal-cell.dow{ font-size:9.5px; opacity:0.6; text-transform:uppercase; }
+  .cal-cell.done{ background:rgba(179,135,47,0.25); color:var(--gold-bright); font-weight:700; }
+  .cal-cell.today{ outline:1px solid var(--gold-bright); }
+
   .panel{
     display:flex; flex-wrap:wrap; gap:10px;
     align-items:center; justify-content:center;
-    margin:18px 0 8px;
+    margin:12px 0 8px;
     background:var(--bg-panel);
     border:1px solid var(--line);
     border-radius:12px;
@@ -123,6 +193,17 @@
   }
   button.primary:hover{ background:linear-gradient(180deg,#f0d269,var(--gold-bright)); }
   button:disabled{ opacity:0.4; cursor:not-allowed; transform:none;}
+  select{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--bg-panel-2);
+    color:var(--bone);
+    cursor:pointer;
+  }
 
   .board-outer{
     position:relative;
@@ -141,79 +222,79 @@
     position:relative;
     transform-origin:top left;
   }
+  /* ---- Slate & Silver tile (from Claude Design sheet 2a, scaled ~0.47 to
+         the 60×78 board tile). ---- */
   .tile{
     position:absolute;
     width:60px; height:78px;
-    border-radius:4px;
+    border-radius:6px;
     background:
-      radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05), transparent 55%),
-      linear-gradient(160deg, var(--tile-1) 0%, var(--tile-2) 100%);
+      radial-gradient(ellipse at 30% 18%, rgba(255,255,255,0.06), transparent 55%),
+      linear-gradient(165deg, var(--tile-1) 0%, var(--tile-2) 70%, var(--tile-3) 100%);
     border:1px solid var(--tile-edge);
     box-shadow:
-      0 3px 0 rgba(0,0,0,0.85),
-      0 8px 16px rgba(0,0,0,0.55),
-      inset 0 0 0 1px rgba(0,0,0,0.5),
-      inset 0 1px 0 rgba(230,236,242,0.18);
+      inset 0 1px 0 var(--tile-hi),
+      inset 0 -3px 5px var(--tile-lo),
+      0 3px 0 -1px var(--tile-lip),
+      0 8px 16px rgba(0,0,0,0.55);
     display:flex; align-items:center; justify-content:center;
-    font-size:28px;
+    font-size:44px;
     line-height:1;
     cursor:pointer;
     user-select:none;
     transition:transform .12s ease, box-shadow .12s ease, opacity .25s ease;
   }
+  /* single engraved inner frame — the clean silver rule from the design
+     (replaces the older bracket frame so the glyph fills more of the face). */
   .tile::before{
     content:"";
     position:absolute; inset:4px;
-    border-radius:2px;
-    border:1px solid rgba(230,236,242,0.14);
+    border-radius:4px;
+    border:1px solid var(--frame-ink);
     pointer-events:none;
   }
   /* faint diagonal sheen, like light catching polished dark stone */
   .tile::after{
     content:"";
     position:absolute; inset:0;
-    border-radius:4px;
+    border-radius:6px;
     background:
-      linear-gradient(115deg, transparent 44%, rgba(255,255,255,0.045) 50%, transparent 56%);
+      linear-gradient(115deg, transparent 44%, rgba(255,255,255,0.05) 50%, transparent 56%);
     pointer-events:none;
   }
   .tile .glyph{
     font-family:'Noto Sans Runic','Inter',sans-serif;
+    font-size:46px;
     text-shadow:
-      0 0 8px currentColor,
-      0 1px 0 rgba(0,0,0,0.6);
+      0 0 16px rgba(200,220,225,0.30),
+      0 1px 1px rgba(0,0,0,0.65);
   }
-  .tile .icon-svg{ width:34px; height:34px; filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 1px 1px rgba(0,0,0,0.5)); }
+  .tile .icon-svg{ width:44px; height:44px; filter:drop-shadow(0 0 6px currentColor) drop-shadow(0 1px 1px rgba(0,0,0,0.55)); }
   .tile.suit-rune{ color:var(--rune-glow); }
   .tile.suit-raven{ color:var(--raven-glow); }
   /* the raven is near-black, so give it a faint silver halo instead of a
      dark glow, or it would sink into the dark slate */
   .tile.suit-raven .icon-svg{
-    filter:drop-shadow(0 0 3px rgba(230,236,242,0.45)) drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+    filter:drop-shadow(0 0 4px rgba(230,236,242,0.5)) drop-shadow(0 1px 1px rgba(0,0,0,0.5));
   }
   .tile.suit-wolf{ color:var(--wolf-glow); }
   .tile.suit-hammer{ color:var(--hammer-glow); }
   .tile.suit-ship{ color:var(--ship-glow); }
   .tile.suit-tree{ color:var(--tree-glow); }
-  .tile-frame{
-    position:absolute; inset:0;
-    width:100%; height:100%;
-    pointer-events:none;
-  }
 
-  .tile.free:hover{ transform:translateY(-5px); box-shadow:0 3px 0 rgba(0,0,0,0.85), 0 12px 20px rgba(0,0,0,0.4);}
+  .tile.free:hover{ transform:translateY(-5px); box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 14px 22px rgba(0,0,0,0.5);}
   .tile.blocked{ cursor:not-allowed; }
   .tile.selected{
     outline:3px solid var(--gold-bright);
     outline-offset:1px;
     transform:translateY(-9px);
-    box-shadow:0 3px 0 rgba(0,0,0,0.85), 0 16px 24px rgba(0,0,0,0.5), 0 0 18px rgba(230,195,74,0.6);
+    box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 18px 26px rgba(0,0,0,0.55), 0 0 20px rgba(230,195,74,0.6);
     z-index:9999 !important;
   }
   .tile.hint{ animation:pulse 0.9s ease-in-out infinite; }
   @keyframes pulse{
-    0%,100%{ box-shadow:0 3px 0 rgba(0,0,0,0.85), 0 8px 14px rgba(0,0,0,0.35), 0 0 0 rgba(230,195,74,0.0);}
-    50%{ box-shadow:0 3px 0 rgba(0,0,0,0.85), 0 8px 14px rgba(0,0,0,0.35), 0 0 20px rgba(230,195,74,0.85);}
+    0%,100%{ box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 8px 16px rgba(0,0,0,0.45), 0 0 0 rgba(230,195,74,0.0);}
+    50%{ box-shadow:inset 0 1px 0 var(--tile-hi), inset 0 -3px 5px var(--tile-lo), 0 3px 0 -1px var(--tile-lip), 0 8px 16px rgba(0,0,0,0.45), 0 0 22px rgba(230,195,74,0.85);}
   }
   .tile.shake{ animation:shake 0.35s ease; }
   @keyframes shake{
@@ -225,6 +306,35 @@
     opacity:0;
     transform:translateY(-20px) scale(0.7);
     pointer-events:none;
+  }
+
+  /* ---- Bone & Rune level shell (Claude Design sheet 2b): ivory stone with
+         engraved slate/rust glyphs on a slate-blue base edge, laid out on a
+         pale birch table. Only the shell swaps — faces stay consistent. ---- */
+  .board-outer.theme-bone{
+    --tile-1:#faf6ea; --tile-2:#efe8d6; --tile-3:#e3dac2;
+    --tile-lip:#3f5a63;
+    --tile-edge:rgba(120,100,60,0.35);
+    --frame-ink:rgba(51,71,78,0.28);
+    --tile-hi:rgba(255,255,255,0.85);
+    --tile-lo:rgba(120,100,60,0.20);
+    --rune-glow:#33474e;
+    --raven-glow:#16171b;
+    --wolf-glow:#5b6570;
+    --hammer-glow:#9a3b2e;
+    --ship-glow:#2e6d7e;
+    --tree-glow:#3d6b4f;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.45), transparent 60%),
+      #dfe3e1;
+    border-color:rgba(63,90,99,0.35);
+    box-shadow:0 20px 50px rgba(0,0,0,0.35), inset 0 0 60px rgba(151,164,158,0.35);
+  }
+  /* engraved (embossed) glyphs instead of the dark theme's silver glow */
+  .theme-bone .tile .glyph{ text-shadow:0 1px 0 rgba(255,255,255,0.65); }
+  .theme-bone .tile .icon-svg,
+  .theme-bone .tile.suit-raven .icon-svg{
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,0.6));
   }
 
   .banner{
@@ -299,6 +409,29 @@
 
   <div class="rune-strip" aria-hidden="true">ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ · ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ</div>
 
+  <div class="tabs">
+    <button class="tab active" id="tabSaga">🗺️ Saga</button>
+    <button class="tab" id="tabDaily">📅 Daily Rune</button>
+  </div>
+
+  <div class="subbar" id="sagaBar">
+    <button class="rnav" id="prevRealm" title="Previous realm">◀</button>
+    <span class="realm-title" id="realmTitle">Midgard</span>
+    <button class="rnav" id="nextRealm" title="Next realm">▶</button>
+    <div class="dots" id="levelDots"></div>
+    <span class="subinfo" id="sagaInfo"></span>
+  </div>
+
+  <div class="subbar" id="dailyBar" style="display:none">
+    <span class="realm-title">Daily Rune</span>
+    <span class="subinfo" id="dailyDate"></span>
+    <span class="subinfo">🏆 <span id="trophyCount">0</span> trophies</span>
+    <span class="subinfo">🔥 <span id="streakCount">0</span> day streak</span>
+    <button class="rnav" id="calBtn">📅 Calendar</button>
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+
   <div class="panel">
     <div class="stat"><div class="val" id="timeVal">00:00</div><div class="lbl">Time</div></div>
     <div class="divider"></div>
@@ -306,9 +439,13 @@
     <div class="divider"></div>
     <div class="stat"><div class="val" id="movesVal">0</div><div class="lbl">Matches</div></div>
     <div class="divider"></div>
+    <div class="stat"><div class="val" id="bestVal">—</div><div class="lbl">Best Time</div></div>
+    <div class="divider"></div>
+    <button id="undoBtn" disabled>↩️ Undo</button>
     <button id="hintBtn">🔮 Seer's Sight</button>
     <button id="shuffleBtn">🌀 Reshuffle Stones</button>
     <button id="newGameBtn" class="primary">⚔️ New Game</button>
+    <button id="sizeBtn" title="Large tiles: never shrink to fit, scroll instead">🔍 Large Tiles</button>
     <button id="howtoBtn">📜 How to Play</button>
     <button id="soundBtn" title="Toggle sound">🔊</button>
   </div>
@@ -322,7 +459,9 @@
     <b>How to select:</b> click a stone to select it, then click a matching stone (same rune or emblem) to remove both.<br>
     <b>Which stones can be picked:</b> only <b>free</b> stones — nothing sitting on top of them, and open on the <b>left or right</b> side (not boxed in on both sides).<br>
     <b>The tiles:</b> 24 stones are carved with the Elder Futhark runes; the rest bear the old emblems — raven, wolf, Mjölnir, longship, and Yggdrasil.<br>
-    <b>Stuck?</b> Call on <b>Seer's Sight</b> to reveal a valid pair, or <b>Reshuffle</b> to rearrange the remaining stones without changing the layout.
+    <b>The Saga:</b> journey through all Nine Realms — five boards in each, growing larger as you go. Slate stones in some realms, carved bone in others. Clear a board to unlock the next; revisit any realm you've reached with the ◀ ▶ arrows.<br>
+    <b>The Daily Rune:</b> one special board per day — the same deal for everyone. Clear it to earn a trophy and keep your streak alive; see your month in the Calendar.<br>
+    <b>Stuck?</b> Call on <b>Seer's Sight</b> to reveal a valid pair, <b>Undo</b> to take back matches, or <b>Reshuffle</b> to rearrange the remaining stones without changing the layout.
   </div>
 
   <div class="board-outer">
@@ -337,7 +476,8 @@
     <h2>The Board Is Cleared</h2>
     <p id="winSummary"></p>
     <div class="modal-actions">
-      <button class="primary" id="playAgainBtn">Play Again</button>
+      <button class="primary" id="nextLevelBtn">Next Realm ⟶</button>
+      <button id="playAgainBtn">Replay Realm</button>
     </div>
   </div>
 </div>
@@ -404,37 +544,6 @@
     TYPES.push({ id:'icon-'+key, cls:'suit-'+key, svg:ICONS[key] });
   });
   // TYPES.length === 29 (24 runes + 5 emblems)
-
-  // Decorative carved frame drawn behind the glyph/icon on every tile —
-  // a double rule line, serif-footed corner brackets, and small jeweled
-  // rivet studs, in the spirit of interlace borders carved around real
-  // rune-stone inscriptions (rendered in pale silver so it reads against
-  // the blackened stone face).
-  const FRAME_SVG =
-    '<svg class="tile-frame" viewBox="0 0 100 130" preserveAspectRatio="none">'+
-    '<g fill="none" stroke="rgba(230,236,242,0.5)" stroke-width="2" stroke-linecap="round">'+
-    '<rect x="7" y="7" width="86" height="116" rx="4"/>'+
-    '<rect x="13" y="13" width="74" height="104" rx="3" stroke-width="1" opacity="0.6"/>'+
-    '<path d="M16,24 L16,12 L28,12"/>'+
-    '<path d="M13,24 L19,24 M28,9 L28,15"/>'+
-    '<path d="M84,24 L84,12 L72,12"/>'+
-    '<path d="M81,24 L87,24 M72,9 L72,15"/>'+
-    '<path d="M16,106 L16,118 L28,118"/>'+
-    '<path d="M13,106 L19,106 M28,115 L28,121"/>'+
-    '<path d="M84,106 L84,118 L72,118"/>'+
-    '<path d="M81,106 L87,106 M72,115 L72,121"/>'+
-    '</g>'+
-    '<g fill="rgba(230,236,242,0.5)">'+
-    '<rect x="46" y="9" width="8" height="8" transform="rotate(45 50 13)"/>'+
-    '<rect x="46" y="113" width="8" height="8" transform="rotate(45 50 117)"/>'+
-    '<rect x="4" y="61" width="8" height="8" transform="rotate(45 8 65)"/>'+
-    '<rect x="88" y="61" width="8" height="8" transform="rotate(45 92 65)"/>'+
-    '</g>'+
-    '<g fill="rgba(10,9,7,0.55)">'+
-    '<circle cx="50" cy="13" r="2"/><circle cx="50" cy="117" r="2"/>'+
-    '<circle cx="8" cy="65" r="2"/><circle cx="92" cy="65" r="2"/>'+
-    '</g>'+
-    '</svg>';
 
   // ---------- Sound engine ----------
   // All sounds are synthesized live with the browser's built-in Web Audio
@@ -503,6 +612,12 @@
       noiseBurst(ac, t0, 0.12, 240, 1.5, 0.4);
       tone(ac, t0, 0.12, 90, 'sine', 0.3);
     },
+    undo(){ // a soft backwards knock: two falling taps
+      const ac = ctx(); if(!ac || !soundOn) return;
+      const t0 = ac.currentTime;
+      tone(ac, t0, 0.10, 320, 'triangle', 0.18);
+      tone(ac, t0+0.07, 0.14, 230, 'triangle', 0.15);
+    },
     shuffle(){ // stones tumbling: several quick offset clacks
       const ac = ctx(); if(!ac || !soundOn) return;
       const t0 = ac.currentTime;
@@ -522,17 +637,90 @@
     },
   };
 
-  // ---------- Layout geometry (positions in half-tile grid units) ----------
-  const LAYER_DEFS = [
-    { z:0, offsetX:0,  offsetY:0, rows:6, cols:12 },
-    { z:1, offsetX:5,  offsetY:3, rows:4, cols:8  },
-    { z:2, offsetX:10, offsetY:6, rows:2, cols:4  },
-    { z:3, offsetX:13, offsetY:7, rows:2, cols:2  },
-  ];
+  // ---------- The Saga: Nine Realms, five boards each ----------
+  // Level layouts are generated, not hand-authored: pyramid stacks that grow
+  // with the global board index g (0..44). Odd-indexed realms use the Bone &
+  // Rune ivory shell, even-indexed the Slate & Silver shell.
+  const REALMS = ['Midgard','Vanaheim','Alfheim','Nidavellir','Jotunheim','Niflheim','Muspelheim','Helheim','Asgard'];
+  const PER_REALM = 5;
+  const TOTAL_LEVELS = REALMS.length * PER_REALM;   // 45
 
-  function buildPositions(){
+  // Deterministic layout for saga board g: 2-5 layers, ~46 up to ~130 stones,
+  // always an even count (the dealer needs whole pairs). g also picks a shape
+  // variant — centered pyramid, left-leaning stair, or down-leaning drift.
+  function sagaLayers(g){
+    const layersN = 2 + Math.min(3, Math.floor(g/10));
+    const rows0 = Math.min(7, 4 + Math.floor(g/12));
+    const target = 44 + g*2;
+    let best = null;
+    for(let cols0 = 5; cols0 <= 18; cols0++){
+      const layers = [];
+      let cnt = 0;
+      for(let i = 0; i < layersN; i++){
+        const r = rows0 - i, c = cols0 - 2*i;
+        if(r < 1 || c < 2) break;
+        layers.push({
+          z: i,
+          offsetX: (g % 3 === 1) ? i : (cols0 - c),
+          offsetY: (g % 3 === 2 && i > 0) ? (rows0 - r + 1) : (rows0 - r),
+          rows: r, cols: c
+        });
+        cnt += r * c;
+      }
+      if(cnt % 2) continue;
+      if(!best || Math.abs(cnt - target) < Math.abs(best.cnt - target)) best = { layers, cnt };
+    }
+    return best.layers;
+  }
+
+  // ---------- Seeded randomness (Daily Rune deals the same board to
+  // everyone on a given date) ----------
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function dateKey(d){
+    return d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
+  }
+
+  // ---------- Progress (localStorage) ----------
+  function loadJSON(k, fallback){
+    try{
+      const v = JSON.parse(localStorage.getItem(k));
+      return v && typeof v === 'object' ? v : fallback;
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+  let sagaDone = loadJSON('wyrd2-saga', {});    // {g: bestSeconds}
+  let dailyDone = loadJSON('wyrd2-daily', {});  // {'YYYY-MM-DD': bestSeconds}
+  let mode = (function(){ try{ return localStorage.getItem('wyrd2-mode') === 'daily' ? 'daily' : 'saga'; }catch(e){ return 'saga'; } })();
+  let largeTiles = (function(){ try{ return localStorage.getItem('wyrd2-large') === '1'; }catch(e){ return false; } })();
+
+  function maxPlayable(){
+    for(let g = 0; g < TOTAL_LEVELS; g++) if(!(g in sagaDone)) return g;
+    return TOTAL_LEVELS - 1;
+  }
+  let sagaPlay = maxPlayable();                 // board being played
+  let viewRealm = Math.floor(sagaPlay / PER_REALM);
+
+  function dailyStreak(){
+    const d = new Date();
+    if(!dailyDone[dateKey(d)]) d.setDate(d.getDate() - 1);  // today not done yet: count from yesterday
+    let s = 0;
+    while(dailyDone[dateKey(d)]){ s++; d.setDate(d.getDate() - 1); }
+    return s;
+  }
+
+  function buildPositions(layerDefs){
     const positions = [];
-    LAYER_DEFS.forEach(layer=>{
+    layerDefs.forEach(layer=>{
       for(let r=0;r<layer.rows;r++){
         for(let c=0;c<layer.cols;c++){
           positions.push({
@@ -574,9 +762,10 @@
     return !(leftBlocked && rightBlocked);
   }
 
-  function shuffleArr(arr){
+  function shuffleArr(arr, rnd){
+    rnd = rnd || Math.random;
     for(let i=arr.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
+      const j=Math.floor(rnd()*(i+1));
       [arr[i],arr[j]]=[arr[j],arr[i]];
     }
     return arr;
@@ -590,6 +779,7 @@
   let timerHandle = null;
   let seconds = 0;
   let gameOver = false;
+  let undoStack = [];   // matched pairs, newest last
 
   const boardEl = document.getElementById('board');
   const timeVal = document.getElementById('timeVal');
@@ -598,38 +788,101 @@
   const stuckBanner = document.getElementById('stuckBanner');
   const winOverlay = document.getElementById('winOverlay');
   const winSummary = document.getElementById('winSummary');
+  const nextLevelBtn = document.getElementById('nextLevelBtn');
+  const boardOuter = document.querySelector('.board-outer');
+  const bestVal = document.getElementById('bestVal');
+  const undoBtn = document.getElementById('undoBtn');
+  const sagaBar = document.getElementById('sagaBar');
+  const dailyBar = document.getElementById('dailyBar');
+  const realmTitle = document.getElementById('realmTitle');
+  const levelDots = document.getElementById('levelDots');
+  const sagaInfo = document.getElementById('sagaInfo');
+  const calendarEl = document.getElementById('calendar');
+  const sizeBtn = document.getElementById('sizeBtn');
+
+  // ---------- Mode bars ----------
+  function updateSagaBar(){
+    realmTitle.textContent = REALMS[viewRealm];
+    const unlockedRealm = Math.floor(maxPlayable() / PER_REALM);
+    document.getElementById('prevRealm').disabled = viewRealm === 0;
+    document.getElementById('nextRealm').disabled = viewRealm >= unlockedRealm;
+    levelDots.innerHTML = '';
+    let doneInRealm = 0;
+    for(let i = 0; i < PER_REALM; i++){
+      const g = viewRealm * PER_REALM + i;
+      const b = document.createElement('button');
+      b.className = 'dot';
+      b.textContent = i + 1;
+      if(g in sagaDone){ b.classList.add('done'); b.textContent = '✓'; doneInRealm++; }
+      if(g === sagaPlay && mode === 'saga') b.classList.add('current');
+      if(g > maxPlayable()){ b.classList.add('locked'); b.disabled = true; }
+      else b.addEventListener('click', ()=>{ sagaPlay = g; newGame(); });
+      levelDots.appendChild(b);
+    }
+    sagaInfo.textContent = Math.floor(sagaPlay / PER_REALM) === viewRealm
+      ? 'Board ' + (sagaPlay % PER_REALM + 1) + ' of ' + PER_REALM
+      : doneInRealm + '/' + PER_REALM + ' cleared';
+  }
+
+  function updateDailyBar(){
+    const now = new Date();
+    document.getElementById('dailyDate').textContent =
+      now.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'long' });
+    document.getElementById('trophyCount').textContent = Object.keys(dailyDone).length;
+    document.getElementById('streakCount').textContent = dailyStreak();
+    if(calendarEl.classList.contains('show')) renderCalendar();
+  }
+
+  function renderCalendar(){
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+    const startDow = new Date(y, m, 1).getDay();
+    let html = '<div class="cal-title">' +
+      now.toLocaleDateString(undefined, { month:'long', year:'numeric' }).toUpperCase() +
+      '</div><div class="cal-grid">';
+    for(const d of ['S','M','T','W','T','F','S']) html += '<div class="cal-cell dow">' + d + '</div>';
+    for(let i = 0; i < startDow; i++) html += '<div class="cal-cell"></div>';
+    for(let day = 1; day <= daysInMonth; day++){
+      const key = y + '-' + String(m+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      const cls = 'cal-cell' + (dailyDone[key] ? ' done' : '') + (day === now.getDate() ? ' today' : '');
+      html += '<div class="' + cls + '">' + (dailyDone[key] ? '🏆' : day) + '</div>';
+    }
+    calendarEl.innerHTML = html + '</div>';
+  }
 
   // Builds a deal that is GUARANTEED solvable: instead of assigning random
   // types and hoping the result can be cleared, we simulate a legal clearing
   // sequence first (always removing two currently-free positions at a time)
   // and hand out matching tile types as we go. The exact sequence we used to
   // build the board is itself proof that the board can be fully cleared.
-  function generateBoard(){
-    const positions = buildPositions();
+  function generateBoard(layerDefs, rnd){
+    rnd = rnd || Math.random;
+    const positions = buildPositions(layerDefs);
     const count = positions.length;
-    const typesNeeded = count/4;
-    // Each type needs exactly 2 entries here: one per pair-removal step,
-    // since each step assigns one type to a matched pair of physical tiles
-    // (2 steps x 2 tiles = 4 physical copies of that type on the board).
+    const pairsNeeded = count/2;
+    // Two consecutive queue entries share a type, so most types land as
+    // four-of-a-kind (an odd pair count leaves one type as a lone pair —
+    // still perfectly matchable). Draw from a shuffled order so small
+    // boards get emblems too, not just the first runes.
+    const order = shuffleArr(TYPES.slice(), rnd);
     const typeQueue = [];
-    for(let i=0;i<typesNeeded;i++){
-      const t = TYPES[i % TYPES.length];
-      typeQueue.push(t,t);
+    for(let i=0;i<pairsNeeded;i++){
+      typeQueue.push(order[(i >> 1) % order.length]);
     }
-    shuffleArr(typeQueue);
 
     for(let constructAttempt=0; constructAttempt<25; constructAttempt++){
       const tiles = positions.map((p,i)=>({
         x:p.x, y:p.y, z:p.z, id:i, removed:false, type:null
       }));
-      shuffleArr(typeQueue);
+      shuffleArr(typeQueue, rnd);
       let typeIdx = 0;
       let stuck = false;
 
       while(tiles.some(t=>!t.removed)){
         const free = tiles.filter(t=>!t.removed && isFreeTile(t, tiles));
         if(free.length < 2){ stuck = true; break; }
-        shuffleArr(free);
+        shuffleArr(free, rnd);
         const a = free[0], b = free[1];
         const type = typeQueue[typeIdx++];
         a.type = type; b.type = type;
@@ -644,7 +897,7 @@
     // Astronomically unlikely fallback: just return the last attempt as-is
     // rather than leave the player with no board at all.
     return positions.map((p,i)=>({
-      x:p.x, y:p.y, z:p.z, id:i, removed:false, type: TYPES[i % TYPES.length]
+      x:p.x, y:p.y, z:p.z, id:i, removed:false, type: order[i % order.length]
     }));
   }
 
@@ -662,9 +915,11 @@
       if(t.removed) return;
       const div = document.createElement('div');
       div.className = 'tile ' + t.type.cls;
-      div.innerHTML = FRAME_SVG;
+      // Slate & Silver faces carry a single engraved frame drawn in CSS
+      // (.tile::before), so the glyph/icon is the only child and can fill
+      // more of the stone — matching the Claude Design sheet.
       if(t.type.svg){
-        div.insertAdjacentHTML('beforeend', t.type.svg);
+        div.innerHTML = t.type.svg;
       } else {
         const span = document.createElement('span');
         span.className = 'glyph';
@@ -724,6 +979,8 @@
       div.classList.add('removing');
       selected.removed = true;
       t.removed = true;
+      undoStack.push([selected, t]);
+      undoBtn.disabled = false;
       selected = null;
       matches++;
       movesVal.textContent = matches;
@@ -756,11 +1013,50 @@
   function endGame(won){
     gameOver = true;
     stopTimer();
-    if(won){
-      winSummary.textContent = 'You cleared all ' + (totalPairs) + ' pairs in ' + formatTime(seconds) + ' with ' + matches + ' matches.';
-      winOverlay.classList.add('show');
-      sfx.win();
+    undoBtn.disabled = true;
+    if(!won) return;
+    let msg;
+    if(mode === 'saga'){
+      const realm = REALMS[Math.floor(sagaPlay / PER_REALM)];
+      const boardNo = sagaPlay % PER_REALM + 1;
+      msg = realm + ' board ' + boardNo + ' cleared — all ' + totalPairs + ' pairs in ' + formatTime(seconds) + '.';
+      const prev = sagaDone[sagaPlay];
+      if(prev == null || seconds < prev){
+        sagaDone[sagaPlay] = seconds;
+        saveJSON('wyrd2-saga', sagaDone);
+        msg += prev == null ? '' : ' A new best — the old record was ' + formatTime(prev) + '.';
+        bestVal.textContent = formatTime(seconds);
+      }
+      if(sagaPlay < TOTAL_LEVELS - 1){
+        const nextRealmStart = boardNo === PER_REALM;
+        nextLevelBtn.textContent = nextRealmStart
+          ? 'Enter ' + REALMS[Math.floor(sagaPlay / PER_REALM) + 1] + ' ⟶'
+          : 'Next Board ⟶';
+        if(nextRealmStart) msg += ' ' + REALMS[Math.floor(sagaPlay / PER_REALM) + 1] + ' awaits.';
+        nextLevelBtn.style.display = '';
+      } else {
+        msg += ' The Nine Realms stand cleared. Skål!';
+        nextLevelBtn.style.display = 'none';
+      }
+      updateSagaBar();
+    } else {
+      const key = dateKey(new Date());
+      const prev = dailyDone[key];
+      if(prev == null || seconds < prev){
+        dailyDone[key] = seconds;
+        saveJSON('wyrd2-daily', dailyDone);
+      }
+      msg = 'Daily Rune complete in ' + formatTime(seconds) +
+        (prev == null ? ' — trophy earned! 🏆' : '.') +
+        ' Trophies: ' + Object.keys(dailyDone).length +
+        ' · Streak: ' + dailyStreak() + (dailyStreak() === 1 ? ' day.' : ' days.');
+      nextLevelBtn.style.display = 'none';
+      bestVal.textContent = formatTime(dailyDone[key]);
+      updateDailyBar();
     }
+    winSummary.textContent = msg;
+    winOverlay.classList.add('show');
+    sfx.win();
   }
 
   function formatTime(s){
@@ -786,12 +1082,40 @@
     gameOver = false;
     selected = null;
     matches = 0;
+    undoStack = [];
+    undoBtn.disabled = true;
     winOverlay.classList.remove('show');
     stuckBanner.classList.remove('show');
-    tiles = generateBoard();
+    try{ localStorage.setItem('wyrd2-mode', mode); }catch(e){}
+
+    let layers, rnd, theme, bestPrev;
+    if(mode === 'saga'){
+      viewRealm = Math.floor(sagaPlay / PER_REALM);
+      layers = sagaLayers(sagaPlay);
+      rnd = Math.random;
+      theme = (viewRealm % 2 === 1) ? 'bone' : 'slate';
+      bestPrev = sagaDone[sagaPlay];
+      updateSagaBar();
+    } else {
+      const key = dateKey(new Date());
+      const seed = Number(key.replace(/-/g, ''));
+      const shapeRnd = mulberry32(seed);
+      layers = sagaLayers(10 + Math.floor(shapeRnd() * 20));
+      rnd = mulberry32(seed ^ 0x9E3779B9);   // same deal for everyone today
+      theme = (seed % 2 === 1) ? 'bone' : 'slate';
+      bestPrev = dailyDone[key];
+      updateDailyBar();
+    }
+    sagaBar.style.display = mode === 'saga' ? '' : 'none';
+    dailyBar.style.display = mode === 'daily' ? '' : 'none';
+    if(mode === 'saga') calendarEl.classList.remove('show');
+    boardOuter.classList.toggle('theme-bone', theme === 'bone');
+    bestVal.textContent = bestPrev != null ? formatTime(bestPrev) : '—';
+
+    tiles = generateBoard(layers, rnd);
     totalPairs = tiles.length/2;
     movesVal.textContent = '0';
-    pairsVal.textContent = '0/' + totalPairs;
+    pairsVal.textContent = totalPairs + '/' + totalPairs;
     render();
     startTimer();
     checkGameState();
@@ -816,6 +1140,21 @@
     });
   }
 
+  function doUndo(){
+    if(gameOver || !undoStack.length) return;
+    const [a, b] = undoStack.pop();
+    a.removed = false;
+    b.removed = false;
+    matches--;
+    if(selected) selected = null;
+    movesVal.textContent = matches;
+    pairsVal.textContent = (totalPairs - matches) + '/' + totalPairs;
+    undoBtn.disabled = undoStack.length === 0;
+    sfx.undo();
+    render();
+    checkGameState();
+  }
+
   function doShuffle(){
     if(gameOver) return;
     const remaining = tiles.filter(t=>!t.removed);
@@ -838,16 +1177,23 @@
   }
 
   function fitBoard(){
-    const outer = document.querySelector('.board-outer');
     const avail = Math.min(window.innerWidth*0.94, 1100);
     const boardW = parseFloat(boardEl.style.width);
-    const scale = Math.min(1, (avail-52)/boardW);
+    // Large-tiles mode never shrinks stones to fit — the board pans instead,
+    // so tiles stay big and readable (the board-outer already scrolls).
+    const scale = largeTiles ? 1 : Math.min(1, (avail-52)/boardW);
     boardEl.style.transform = 'scale(' + scale + ')';
     boardEl.parentElement.style.height = (boardEl.offsetHeight*scale) + 'px';
   }
 
+  function applySizeBtn(){
+    sizeBtn.classList.toggle('active', largeTiles);
+    try{ localStorage.setItem('wyrd2-large', largeTiles ? '1' : '0'); }catch(e){}
+  }
+
   window.addEventListener('resize', fitBoard);
 
+  undoBtn.addEventListener('click', doUndo);
   document.getElementById('hintBtn').addEventListener('click', doHint);
   document.getElementById('soundBtn').addEventListener('click', ()=>{
     soundOn = !soundOn;
@@ -858,11 +1204,40 @@
   document.getElementById('bannerShuffle').addEventListener('click', doShuffle);
   document.getElementById('newGameBtn').addEventListener('click', newGame);
   document.getElementById('playAgainBtn').addEventListener('click', newGame);
-  document.getElementById('howtoBtn').addEventListener('click', ()=>{
-    document.getElementById('howto').classList.toggle('show');
+  nextLevelBtn.addEventListener('click', ()=>{
+    if(mode === 'saga' && sagaPlay < TOTAL_LEVELS-1) sagaPlay++;
+    newGame();
   });
 
-  newGame();
+  const tabSaga = document.getElementById('tabSaga');
+  const tabDaily = document.getElementById('tabDaily');
+  function setMode(m){
+    mode = m;
+    tabSaga.classList.toggle('active', m === 'saga');
+    tabDaily.classList.toggle('active', m === 'daily');
+    newGame();
+  }
+  tabSaga.addEventListener('click', ()=> setMode('saga'));
+  tabDaily.addEventListener('click', ()=> setMode('daily'));
+
+  document.getElementById('prevRealm').addEventListener('click', ()=>{
+    if(viewRealm > 0){ viewRealm--; updateSagaBar(); }
+  });
+  document.getElementById('nextRealm').addEventListener('click', ()=>{
+    if(viewRealm < Math.floor(maxPlayable() / PER_REALM)){ viewRealm++; updateSagaBar(); }
+  });
+  document.getElementById('calBtn').addEventListener('click', ()=>{
+    calendarEl.classList.toggle('show');
+    if(calendarEl.classList.contains('show')) renderCalendar();
+  });
+  sizeBtn.addEventListener('click', ()=>{
+    largeTiles = !largeTiles;
+    applySizeBtn();
+    fitBoard();
+  });
+
+  applySizeBtn();
+  setMode(mode);
 })();
 </script>
 </body>
