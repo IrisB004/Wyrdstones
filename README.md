@@ -16,19 +16,21 @@ Open `index.html`, or serve the repo root with any static file server
 - **Seer's Sight** reveals a valid pair; **Reshuffle Stones** re-deals the
   remaining stones in place.
 
-## The realms
+## Game modes
 
-Four levels of rising difficulty, alternating the two tile shells from the
-Claude Design tile sheets (see `design/`):
+**Saga** — journey through the Nine Realms (Midgard, Vanaheim, Alfheim,
+Nidavellir, Jotunheim, Niflheim, Muspelheim, Helheim, Asgard), five boards
+per realm, 45 in all. Boards grow from ~50 to ~130 stones and unlock
+sequentially; realms alternate between the Slate & Silver and Bone & Rune
+tile shells from the Claude Design sheets (see `design/`). Progress and best
+times are stored in `localStorage`.
 
-| # | Realm    | Stones | Shell          |
-|---|----------|--------|----------------|
-| 1 | Midgard  | 56     | Slate & Silver |
-| 2 | Vanaheim | 84     | Bone & Rune    |
-| 3 | Niflheim | 116    | Slate & Silver |
-| 4 | Asgard   | 128    | Bone & Rune    |
+**Daily Rune** — one seeded board per calendar day: everyone in the world
+gets the same deal. Clearing it earns a trophy; the bar tracks total
+trophies and current streak, and the calendar shows the month at a glance.
 
-The current realm is remembered in `localStorage`.
+**Large Tiles** — accessibility toggle: the board never shrinks to fit the
+window; it pans instead, keeping stones full-size and readable.
 
 ## The tiles
 

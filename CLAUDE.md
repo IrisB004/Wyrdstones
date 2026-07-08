@@ -20,12 +20,18 @@ dependency (the game degrades gracefully without it).
 - Tile shells are driven by CSS custom properties on `.board-outer`;
   `.theme-bone` overrides them for the ivory shell. Add new themes the same
   way rather than duplicating tile rules.
-- `LEVELS` defines the realms. Layer grids are in half-tile units; **every
-  layout's tile count must be divisible by 4** or the dealer breaks.
-- `generateBoard()` guarantees solvable deals by simulating a legal clearing
-  sequence and assigning matched types along it. Don't replace it with
-  random assignment.
+- Two modes: **Saga** (9 realms × 5 boards, sequential unlock, progress in
+  `wyrd2-saga`) and **Daily Rune** (date-seeded deal via `mulberry32`, so the
+  same board is dealt worldwide each day; trophies in `wyrd2-daily`). Layouts
+  come from `sagaLayers(g)`, which generates pyramid stacks in half-tile
+  units; **tile counts must stay even** or the dealer breaks.
+- `generateBoard(layers, rnd)` guarantees solvable deals by simulating a
+  legal clearing sequence and assigning matched types along it. Don't replace
+  it with random assignment, and keep every random choice inside it drawn
+  from the passed `rnd` — that's what makes the Daily Rune deterministic.
 - Sounds are Web Audio synthesis in the `sfx` object; no audio files.
+- Functional model (journey progression, daily challenge + trophies, large
+  tiles) follows Vita Mahjong; all art, names, and code are original.
 
 ## Verifying changes
 
